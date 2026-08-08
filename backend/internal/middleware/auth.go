@@ -96,6 +96,38 @@ func RequireAuth(secret string) func(http.Handler) http.Handler {
 	}
 }
 
+// OptionalAuth parses the JWT cookie when present but lets anonymous requests through.
+func OptionalAuth(secret string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cookie, err := r.Cookie(CookieName)
+			if err != nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			claims := &Claims{}
+			token, err := jwt.ParseWithClaims(cookie.Value, claims, func(t *jwt.Token) (any, error) {
+				return []byte(secret), nil
+			}, jwt.WithValidMethods([]string{"HS256"}))
+			if err != nil || !token.Valid {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			userID, err := uuid.Parse(claims.UserID)
+			if err != nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), ctxUserID, userID)
+			ctx = context.WithValue(ctx, ctxRole, models.Role(claims.Role))
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
 // RequireRole allows only the listed roles past. Must be nested inside RequireAuth.
 func RequireRole(roles ...models.Role) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

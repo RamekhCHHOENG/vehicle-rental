@@ -13,6 +13,7 @@ import (
 	"github.com/ramekhchhoeng/car-rental/backend/internal/handlers"
 	"github.com/ramekhchhoeng/car-rental/backend/internal/httputil"
 	"github.com/ramekhchhoeng/car-rental/backend/internal/middleware"
+	"github.com/ramekhchhoeng/car-rental/backend/internal/models"
 )
 
 func main() {
@@ -24,6 +25,7 @@ func main() {
 	}
 
 	auth := &handlers.AuthHandler{DB: db, JWTSecret: cfg.JWTSecret}
+	vehicles := &handlers.VehicleHandler{DB: db}
 
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
@@ -45,6 +47,27 @@ func main() {
 		r.Post("/logout", auth.Logout)
 		r.With(middleware.RequireAuth(cfg.JWTSecret)).Get("/me", auth.Me)
 	})
+
+	// Public browse (GetPublic also lets a logged-in owner/admin see non-approved).
+	r.Route("/api/vehicles", func(r chi.Router) {
+		r.Get("/", vehicles.ListPublic)
+		r.With(middleware.OptionalAuth(cfg.JWTSecret)).Get("/{id}", vehicles.GetPublic)
+	})
+
+	// Owner-only vehicle management.
+	r.Route("/api/owner", func(r chi.Router) {
+		r.Use(middleware.RequireAuth(cfg.JWTSecret))
+		r.Use(middleware.RequireRole(models.RoleOwner))
+		r.Post("/vehicles", vehicles.CreateOwn)
+		r.Get("/vehicles", vehicles.ListOwn)
+		r.Put("/vehicles/{id}", vehicles.UpdateOwn)
+		r.Delete("/vehicles/{id}", vehicles.DeleteOwn)
+		r.Post("/vehicles/{id}/photos", vehicles.UploadPhoto)
+		r.Delete("/vehicles/{id}/photos/{photoId}", vehicles.DeletePhoto)
+	})
+
+	// Uploaded photos served as static files.
+	r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 
 	log.Printf("API listening on :%s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, r); err != nil {
