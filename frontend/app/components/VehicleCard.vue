@@ -5,6 +5,10 @@ const props = defineProps<{ vehicle: Vehicle }>()
 const photoUrl = usePhotoUrl()
 
 const cover = computed(() => photoUrl(props.vehicle.photos?.[0]?.file_path))
+
+// Three at most: the card is a summary, and the detail page lists them all.
+const topFeatures = computed(() => (props.vehicle.features ?? []).slice(0, 3))
+const extraFeatures = computed(() => Math.max(0, (props.vehicle.features?.length ?? 0) - 3))
 </script>
 
 <template>
@@ -13,7 +17,7 @@ const cover = computed(() => photoUrl(props.vehicle.photos?.[0]?.file_path))
       <div class="relative">
         <img
           :src="cover"
-          :alt="`${vehicle.make} ${vehicle.model}`"
+          :alt="vehicleName(vehicle)"
           class="w-full h-44 object-cover"
           loading="lazy"
         >
@@ -24,7 +28,7 @@ const cover = computed(() => photoUrl(props.vehicle.photos?.[0]?.file_path))
       <div class="p-5 flex-1 flex flex-col">
         <div class="flex items-baseline justify-between gap-3">
           <h3 class="display-md text-[16px] truncate">
-            {{ vehicle.make }} {{ vehicle.model }}
+            {{ vehicleName(vehicle) }}
           </h3>
           <p class="font-display numeric text-[16px] font-bold whitespace-nowrap">
             ${{ vehicle.price_per_day }}<span class="text-[11px] font-medium text-[var(--ui-text-dimmed)]">/day</span>
@@ -35,8 +39,16 @@ const cover = computed(() => photoUrl(props.vehicle.photos?.[0]?.file_path))
           {{ vehicle.type }} · {{ vehicle.year }} · {{ vehicle.transmission }}
           <template v-if="vehicle.seats"> · {{ vehicle.seats }} seats</template>
         </p>
+        <div v-if="topFeatures.length" class="mt-3 flex flex-wrap gap-1.5">
+          <span v-for="feature in topFeatures" :key="feature.id" class="dk-chip !text-[11.5px] !py-1 !px-2">
+            <UIcon v-if="feature.icon" :name="feature.icon" class="size-3" />
+            {{ feature.name }}
+          </span>
+          <span v-if="extraFeatures" class="dk-chip !text-[11.5px] !py-1 !px-2">+{{ extraFeatures }}</span>
+        </div>
+
         <p class="mt-auto pt-3 text-[12.5px] text-[var(--ui-text-dimmed)]">
-          {{ vehicle.location }}
+          {{ provinceName(vehicle) }}
         </p>
       </div>
     </article>

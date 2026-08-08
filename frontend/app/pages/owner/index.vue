@@ -44,13 +44,13 @@ async function removeVehicle(id: string) {
     <div v-else class="space-y-4">
       <UCard v-for="v in vehicles" :key="v.id">
         <div class="flex gap-4 items-center">
-          <img :src="photoUrl(v.photos?.[0]?.file_path)" class="w-28 h-20 object-cover rounded" :alt="v.make">
+          <img :src="photoUrl(v.photos?.[0]?.file_path)" class="w-28 h-20 object-cover rounded" :alt="vehicleName(v)">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-              <h3 class="font-semibold">{{ v.make }} {{ v.model }} {{ v.year }}</h3>
+              <h3 class="font-semibold">{{ vehicleName(v) }} {{ v.year }}</h3>
               <StatusBadge :status="v.status" />
             </div>
-            <p class="text-sm text-gray-500">${{ v.price_per_day }}/day · {{ v.location }}</p>
+            <p class="text-sm text-gray-500">${{ v.price_per_day }}/day · {{ provinceName(v) }}</p>
             <p v-if="v.status === 'rejected' && v.rejection_reason" class="text-sm text-red-500 mt-1">
               Reason: {{ v.rejection_reason }}
             </p>

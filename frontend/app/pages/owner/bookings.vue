@@ -40,7 +40,7 @@ async function act(b: Booking, action: 'confirm' | 'reject' | 'complete') {
         <div class="flex gap-4 items-center flex-wrap">
           <div class="flex-1 min-w-48">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="font-semibold">{{ b.vehicle?.make }} {{ b.vehicle?.model }}</span>
+              <span class="font-semibold">{{ vehicleName(b.vehicle) }}</span>
               <StatusBadge :status="b.status" />
             </div>
             <p class="text-sm text-gray-500">

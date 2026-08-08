@@ -12,11 +12,21 @@ const api = useApi()
 const photoUrl = usePhotoUrl()
 const toast = useToast()
 
-const section = ref<'listings' | 'users'>('listings')
+type Section = 'listings' | 'users' | 'provinces' | 'makes' | 'features'
+
+const section = ref<Section>('listings')
+
+// Flat, in one row. The three on the right configure the vocabulary listings
+// are written in; the two on the left are the daily work.
 const sectionTabs = [
   { label: 'Listings', value: 'listings' },
-  { label: 'Users', value: 'users' }
+  { label: 'Users', value: 'users' },
+  { label: 'Provinces', value: 'provinces' },
+  { label: 'Makes & models', value: 'makes' },
+  { label: 'Features', value: 'features' }
 ]
+
+const metadataSections: Section[] = ['provinces', 'makes', 'features']
 
 /* ---------------- stats ---------------- */
 
@@ -48,7 +58,7 @@ const isTakedown = computed(() => actioning.value?.status === 'approved')
 async function approve(vehicle: Vehicle) {
   try {
     await api(`/api/admin/vehicles/${vehicle.id}/approve`, { method: 'POST' })
-    toast.add({ title: `${vehicle.make} ${vehicle.model} approved`, color: 'success' })
+    toast.add({ title: `${vehicleName(vehicle)} approved`, color: 'success' })
     refreshAll()
   } catch (err: any) {
     toast.add({ title: 'Approve failed', description: err.data?.error, color: 'error' })
@@ -148,7 +158,12 @@ function formatDate(iso: string) {
     <UTabs v-model="section" :items="sectionTabs" :content="false" class="mb-6" />
 
     <!-- ============ LISTINGS ============ -->
-    <div v-if="section === 'listings'">
+    <AdminMetadata
+      v-if="metadataSections.includes(section)"
+      :section="(section as 'provinces' | 'makes' | 'features')"
+    />
+
+    <div v-else-if="section === 'listings'">
       <UTabs v-model="statusFilter" :items="statusTabs" :content="false" size="sm" class="mb-5" />
 
       <p v-if="!vehicles?.length" class="text-center py-16 text-[13px] text-neutral-400">
@@ -158,12 +173,12 @@ function formatDate(iso: string) {
       <div v-else class="space-y-3">
         <div v-for="v in vehicles" :key="v.id" class="dk-card p-4">
           <div class="flex gap-4">
-            <img :src="photoUrl(v.photos?.[0]?.file_path)" class="w-32 h-24 object-cover rounded-[var(--r-control)] flex-none" :alt="v.make">
+            <img :src="photoUrl(v.photos?.[0]?.file_path)" class="w-32 h-24 object-cover rounded-[var(--r-control)] flex-none" :alt="vehicleName(v)">
 
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <NuxtLink :to="`/vehicles/${v.id}`" class="text-[15px] font-semibold tracking-tight hover:underline">
-                  {{ v.make }} {{ v.model }} {{ v.year }}
+                  {{ vehicleName(v) }} {{ v.year }}
                 </NuxtLink>
                 <StatusBadge :status="v.status" />
                 <UBadge v-if="v.active_bookings" color="warning" variant="subtle" size="sm">
@@ -171,7 +186,7 @@ function formatDate(iso: string) {
                 </UBadge>
               </div>
               <p class="text-[12px] text-neutral-500 dark:text-neutral-400 capitalize mt-1">
-                {{ v.type }} · {{ v.transmission }} · ${{ v.price_per_day }}/day · {{ v.location }}
+                {{ v.type }} · {{ v.transmission }} · ${{ v.price_per_day }}/day · {{ provinceName(v) }}
               </p>
               <p class="text-[12px] text-neutral-500 dark:text-neutral-400">
                 Owner: {{ v.owner?.full_name }} ({{ v.owner?.email }})

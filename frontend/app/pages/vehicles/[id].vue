@@ -37,7 +37,8 @@ const specs = computed(() => {
     { label: 'Transmission', value: v.transmission },
     ...(v.seats ? [{ label: 'Seats', value: String(v.seats) }] : []),
     { label: 'Year', value: String(v.year) },
-    { label: 'Location', value: v.location }
+    { label: 'Make', value: v.make?.name ?? '—' },
+    { label: 'Province', value: provinceNameFull(v) }
   ]
 })
 </script>
@@ -58,7 +59,7 @@ const specs = computed(() => {
         <div class="relative">
           <img
             :src="photoUrl(vehicle.photos?.[selectedPhoto]?.file_path)"
-            :alt="`${vehicle.make} ${vehicle.model}`"
+            :alt="vehicleName(vehicle)"
             class="w-full h-[340px] object-cover rounded-[var(--r-media)]"
           >
           <VerifiedSeal
@@ -86,7 +87,7 @@ const specs = computed(() => {
         <div>
           <div class="flex items-center gap-3 flex-wrap">
             <h1 class="display-md text-[32px]">
-              {{ vehicle.make }} {{ vehicle.model }}
+              {{ vehicleName(vehicle) }}
             </h1>
             <StatusBadge v-if="vehicle.status !== 'approved'" :status="vehicle.status" />
           </div>
@@ -112,6 +113,18 @@ const specs = computed(() => {
               <span class="text-[13px] font-medium capitalize">{{ spec.value }}</span>
             </li>
           </ul>
+
+          <!-- What the owner committed to providing, in the same words the
+               renter filtered on. -->
+          <template v-if="vehicle.features?.length">
+            <p class="eyebrow mt-6 mb-3">Included</p>
+            <div class="flex flex-wrap gap-2">
+              <span v-for="feature in vehicle.features" :key="feature.id" class="dk-chip">
+                <UIcon v-if="feature.icon" :name="feature.icon" class="size-3.5" />
+                {{ feature.name }}
+              </span>
+            </div>
+          </template>
         </div>
       </div>
 

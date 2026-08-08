@@ -31,6 +31,9 @@ func main() {
 	vehicles := &handlers.VehicleHandler{DB: db}
 	admin := &handlers.AdminHandler{DB: db}
 	bookings := &handlers.BookingHandler{DB: db}
+	metadata := &handlers.MetadataHandler{DB: db}
+	adminMetadata := &handlers.AdminMetadataHandler{DB: db}
+	metadataImport := &handlers.ImportHandler{DB: db}
 
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
@@ -45,6 +48,13 @@ func main() {
 	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		httputil.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
+
+	// The vocabulary listings are written in: provinces, makes, models,
+	// features. Public because the browse filters need it before anyone logs in.
+	r.Get("/api/metadata", metadata.Get)
+	// Models are fetched per make rather than shipped with /api/metadata: a few
+	// thousand makes is a small payload, all of their models is not.
+	r.Get("/api/makes/{id}/models", metadata.ListModels)
 
 	r.Route("/api/auth", func(r chi.Router) {
 		r.Post("/register", auth.Register)
@@ -94,6 +104,31 @@ func main() {
 		r.Post("/vehicles/{id}/reject", admin.Reject)
 		r.Get("/users", admin.ListUsers)
 		r.Get("/stats", admin.Stats)
+
+		// Managing that vocabulary. Deletes are refused for anything a listing
+		// points at — see AdminMetadataHandler.
+		r.Get("/metadata", adminMetadata.ListAll)
+		// Paged and searched separately: a few thousand makes with their models
+		// attached is not a payload, it is a download.
+		r.Get("/makes", adminMetadata.ListMakes)
+		r.Get("/makes/{id}/models", adminMetadata.ListModelsForMake)
+		r.Post("/provinces", adminMetadata.CreateProvince)
+		r.Put("/provinces/{id}", adminMetadata.UpdateProvince)
+		r.Delete("/provinces/{id}", adminMetadata.DeleteProvince)
+		r.Post("/makes", adminMetadata.CreateMake)
+		r.Put("/makes/{id}", adminMetadata.UpdateMake)
+		r.Delete("/makes/{id}", adminMetadata.DeleteMake)
+		r.Post("/models", adminMetadata.CreateModel)
+		r.Put("/models/{id}", adminMetadata.UpdateModel)
+		r.Delete("/models/{id}", adminMetadata.DeleteModel)
+		r.Post("/features", adminMetadata.CreateFeature)
+		r.Put("/features/{id}", adminMetadata.UpdateFeature)
+		r.Delete("/features/{id}", adminMetadata.DeleteFeature)
+
+		// Bulk import from NHTSA's open vehicle database. Runs in the
+		// background — the model half is roughly 1,900 upstream requests.
+		r.Get("/metadata/import", metadataImport.Status)
+		r.Post("/metadata/import", metadataImport.Start)
 	})
 
 	// Uploaded photos served as static files.

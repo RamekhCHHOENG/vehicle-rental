@@ -34,7 +34,7 @@ func (h *AdminHandler) ListVehicles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var vehicles []models.Vehicle
-	err := h.DB.Preload("Photos").Preload("Owner").
+	err := h.DB.Scopes(withReferences).Preload("Owner").
 		Where("status = ?", status).
 		Order("created_at ASC").
 		Find(&vehicles).Error

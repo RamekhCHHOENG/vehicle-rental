@@ -104,7 +104,9 @@ func (h *BookingHandler) Create(w http.ResponseWriter, r *http.Request) {
 // ListOwn returns the renter's bookings, newest first.
 func (h *BookingHandler) ListOwn(w http.ResponseWriter, r *http.Request) {
 	var bookings []models.Booking
-	err := h.DB.Preload("Vehicle").Preload("Vehicle.Photos").Preload("Review").
+	err := h.DB.Preload("Vehicle").Preload("Vehicle.Photos").
+		Preload("Vehicle.Make").Preload("Vehicle.Model").Preload("Vehicle.Province").
+		Preload("Review").
 		Where("renter_id = ?", middleware.UserIDFrom(r.Context())).
 		Order("created_at DESC").Find(&bookings).Error
 	if err != nil {
@@ -171,7 +173,8 @@ func (h *BookingHandler) Review(w http.ResponseWriter, r *http.Request) {
 // ListForOwner returns bookings on any of the owner's vehicles.
 func (h *BookingHandler) ListForOwner(w http.ResponseWriter, r *http.Request) {
 	var bookings []models.Booking
-	err := h.DB.Preload("Vehicle").Preload("Renter").
+	err := h.DB.Preload("Vehicle").Preload("Vehicle.Make").Preload("Vehicle.Model").
+		Preload("Vehicle.Province").Preload("Renter").
 		Joins("JOIN vehicles ON vehicles.id = bookings.vehicle_id").
 		Where("vehicles.owner_id = ?", middleware.UserIDFrom(r.Context())).
 		Order("bookings.created_at DESC").Find(&bookings).Error

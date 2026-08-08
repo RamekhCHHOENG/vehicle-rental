@@ -223,6 +223,40 @@ body {
 
 .record-row:last-child { border-bottom: 0; }
 
+/* ---------- Chips: what a listing includes ----------
+   A toggle in the owner's form and a read-only badge on the card, so the same
+   thing looks the same in both places. Selected takes the saffron accent with
+   ink text on it — the accent is too light to carry white. */
+
+.dk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--r-small);
+  background: color-mix(in srgb, var(--ui-bg-elevated) 70%, transparent);
+  color: var(--ui-text-muted);
+  font-size: 12.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+
+button.dk-chip:hover {
+  border-color: color-mix(in srgb, #f2a93b 45%, var(--ui-border));
+  color: var(--ui-text);
+}
+
+.dk-chip-on {
+  border-color: color-mix(in srgb, #f2a93b 60%, transparent);
+  background: color-mix(in srgb, #f2a93b 16%, transparent);
+  color: #0a2422;
+}
+
+.dark .dk-chip-on { color: #f2bd5e; }
+
 @media (prefers-reduced-motion: reduce) {
-  .dk-card-interactive { transition-duration: 0.01ms; }
+  .dk-card-interactive,
+  .dk-chip { transition-duration: 0.01ms; }
 }

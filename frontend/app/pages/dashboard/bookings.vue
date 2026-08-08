@@ -66,7 +66,7 @@ async function submitReview() {
           <div class="flex-1 min-w-48">
             <div class="flex items-center gap-2 flex-wrap">
               <NuxtLink :to="`/vehicles/${b.vehicle_id}`" class="font-semibold hover:underline">
-                {{ b.vehicle?.make }} {{ b.vehicle?.model }}
+                {{ vehicleName(b.vehicle) }}
               </NuxtLink>
               <StatusBadge :status="b.status" />
             </div>
@@ -103,7 +103,7 @@ async function submitReview() {
       <template #body>
         <div class="space-y-4">
           <p class="text-sm text-gray-500">
-            How was the {{ reviewing?.vehicle?.make }} {{ reviewing?.vehicle?.model }}?
+            How was the {{ vehicleName(reviewing?.vehicle) }}?
           </p>
           <div class="flex gap-1 text-3xl">
             <button

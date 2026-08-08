@@ -19,12 +19,26 @@ func Connect(cfg config.Config) (*gorm.DB, error) {
 	}
 
 	if err := db.AutoMigrate(
+		&models.Province{},
+		&models.VehicleMake{},
+		&models.VehicleModel{},
+		&models.Feature{},
 		&models.User{},
 		&models.Vehicle{},
 		&models.VehiclePhoto{},
 		&models.Booking{},
 		&models.Review{},
 	); err != nil {
+		return nil, err
+	}
+
+	// Order matters: the reference rows have to exist before listings can be
+	// matched against them, and the legacy columns can only be dropped once
+	// that matching is done.
+	if err := seedMetadata(db); err != nil {
+		return nil, err
+	}
+	if err := backfillVehicleReferences(db); err != nil {
 		return nil, err
 	}
 

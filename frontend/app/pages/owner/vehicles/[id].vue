@@ -58,8 +58,19 @@ async function deletePhoto(photo: VehiclePhoto) {
   }
 }
 
-function onSaved() {
-  toast.add({ title: 'Changes saved' })
+function onSaved(saved: Vehicle) {
+  // A rejected listing goes back into the queue the moment it is edited, so the
+  // owner is told that instead of a bare "saved" that implies it is live.
+  const resubmitted = vehicle.value?.status === 'rejected' && saved.status === 'pending'
+
+  toast.add(resubmitted
+    ? {
+        title: 'Sent back for inspection',
+        description: 'Your changes put this listing back in the review queue.',
+        color: 'success'
+      }
+    : { title: 'Changes saved' })
+
   refresh()
 }
 </script>
@@ -68,18 +79,29 @@ function onSaved() {
   <UContainer class="py-8 max-w-2xl">
     <div v-if="vehicle">
       <div class="flex items-center gap-3 mb-6">
-        <h1 class="text-3xl font-bold">{{ vehicle.make }} {{ vehicle.model }}</h1>
+        <h1 class="text-3xl font-bold">{{ vehicleName(vehicle) }}</h1>
         <StatusBadge :status="vehicle.status" />
       </div>
 
+      <!-- A rejection is a to-do list, not a verdict: saying so is what makes
+           the resubmit discoverable. -->
       <UAlert
-        v-if="vehicle.status === 'rejected' && vehicle.rejection_reason"
+        v-if="vehicle.status === 'rejected'"
         color="error"
         variant="subtle"
-        title="Listing rejected"
-        :description="vehicle.rejection_reason"
+        icon="i-lucide-clipboard-list"
+        title="Fix these and save to resubmit"
         class="mb-6"
-      />
+      >
+        <template #description>
+          <p v-if="vehicle.rejection_reason" class="whitespace-pre-line">
+            {{ vehicle.rejection_reason }}
+          </p>
+          <p class="mt-2 opacity-80">
+            Saving any change puts this listing back in the inspection queue.
+          </p>
+        </template>
+      </UAlert>
 
       <UCard class="mb-6">
         <template #header><h2 class="font-semibold">Photos</h2></template>

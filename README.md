@@ -132,6 +132,71 @@ the deploy still reports success, because `docker compose up` did return
 cleanly. Keeping production in the file every tool reaches for by default
 removes the failure mode.
 
+## Listing vocabulary
+
+Make, model and location used to be free text, and it went exactly as free text
+does: the first two real listings were filed as make `"Lamborghini Veneno "`,
+model `"Lamborghini"` and make `"Tesla Model Y"`, model `"Tesla"` — the fields
+swapped, the whitespace kept. A renter filtering on "Phnom Penh" could not find
+a vehicle listed in "phnom penh", so listings were quietly unfindable.
+
+Four tables now hold that vocabulary, seeded on first startup and managed from
+**Admin → Metadata**:
+
+| Table | Contents |
+|---|---|
+| `provinces` | Cambodia's 25 provinces, English and Khmer |
+| `vehicle_makes` | manufacturers |
+| `vehicle_models` | models, each belonging to a make and carrying its own type |
+| `features` | air conditioning, helmets, delivery — what a listing includes |
+
+Type lives on the **model**, not the make, because Honda and Suzuki sell both
+cars and motorbikes: choosing "motorbike" narrows Honda to its motorbikes and
+drops Lexus from the list entirely.
+
+Two rules run through the whole thing:
+
+- **Nothing a listing uses can be deleted.** Deleting a make would either orphan
+  the vehicles listed under it or silently rewrite what their owners said, so
+  the API refuses and the admin screen offers *Retire* instead. Retiring hides
+  an entry from every form and leaves existing listings untouched. Each row
+  shows its listing count, so the refusal is never a surprise.
+- **`type` and `transmission` stay in Go.** Handlers branch on those values, so
+  an admin renaming "car" at runtime would break code rather than data. They are
+  served through `/api/metadata` anyway, so the frontend still has one source
+  for every list a form needs instead of a hardcoded copy that drifts.
+
+### Where the catalogue comes from
+
+The seed is twenty makes chosen for this market. Beyond that, **Admin → Makes &
+models → Import from NHTSA** pulls the US Department of Transportation's open
+vehicle database: 195 car makes, 1,684 motorcycle makes, and their models. It is
+free and needs no key.
+
+It is imported, not proxied. Every listing holds a foreign key into our tables,
+so the catalogue has to outlive an outage at `vpic.nhtsa.dot.gov`, and an admin
+has to be able to retire an entry we disagree with. The data is
+US-registration-oriented and imperfect — names arrive shouted, Toyota's model
+list includes Scions, and the motorcycle tail is full of tiny importers — so
+only the casing is cleaned up and the rest is left for the admin to retire.
+
+Models cost one upstream request *per make*, about 1,900 of them, so the import
+runs in the background and the screen polls it. That volume is also why makes
+and models are separate endpoints: a few thousand makes is a small payload,
+their combined models is a download. `/api/metadata` carries makes with
+`has_cars` / `has_motorbikes` flags derived in the query, which is enough for a
+form to offer the right makes without knowing any model.
+
+### Carrying the old listings across
+
+Existing listings were carried across by matching their old text against the
+seeded names. The matching reads make and model as one string, longest name
+first — that is how `"Lamborghini Veneno "` + `"Lamborghini"` resolves to make
+*Lamborghini*, model *Veneno* whichever field each half was typed into, and why
+`"Range Rover"` is not beaten by the `"Rover"` inside it. Anything unmatched has
+a make or model created for it rather than being dropped; the legacy columns are
+only dropped once that has run.
+
 ## Design system — "Inspected"
 
 The visual layer starts from `@ramekhchhoeng/designkit` — its frosted-glass
@@ -169,6 +234,9 @@ Tokens live in `frontend/app/assets/css/main.css`; component shapes in
 
 1. **Owner** signs up → lists a vehicle with photos → status `pending`.
 2. **Admin** reviews the queue → approves (goes public) or rejects with a reason.
+   A rejection is a to-do list, not a verdict: editing a rejected listing puts it
+   straight back in the queue and clears the old reason, since the reason
+   described a version that no longer exists.
 3. **Renter** browses approved vehicles → books in 3 steps (dates → review →
    confirm). Price is computed server-side; dates clashing with a confirmed
    booking are refused.
@@ -179,12 +247,16 @@ Tokens live in `frontend/app/assets/css/main.css`; component shapes in
 
 | Method & path | Who | What |
 |---|---|---|
+| GET `/api/metadata` | public | provinces, makes, features, and the fixed enums |
+| GET `/api/makes/{id}/models` | public | one make's models — separate because the catalogue is thousands deep |
 | POST `/api/auth/register` · `/login` · `/logout`, GET `/me` | public / any | session management |
 | GET `/api/vehicles`, `/api/vehicles/{id}` | public | browse approved listings |
 | POST/GET/PUT/DELETE `/api/owner/vehicles…` + `/photos` | owner | manage own listings |
 | GET `/api/owner/bookings`, POST `…/confirm` `…/reject` `…/complete` | owner | handle requests |
 | POST/GET `/api/bookings`, POST `…/cancel` `…/review` | renter | book, cancel, review |
 | GET `/api/admin/vehicles` `…/users` `…/stats`, POST `…/approve` `…/reject` | admin | verification, users & metrics |
+| GET `/api/admin/metadata` `…/makes` `…/makes/{id}/models`, POST/PUT/DELETE `…/provinces` `…/makes` `…/models` `…/features` | admin | manage the listing vocabulary |
+| GET/POST `/api/admin/metadata/import` | admin | import the catalogue from NHTSA, and poll its progress |
 
 ### What the admin can do
 
