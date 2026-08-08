@@ -1,4 +1,9 @@
 <script setup lang="ts">
+
+useSeoMeta({
+  title: 'Sign up',
+  robots: 'noindex'
+})
 const { register } = useAuth()
 const toast = useToast()
 

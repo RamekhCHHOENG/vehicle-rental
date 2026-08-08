@@ -1,4 +1,9 @@
 <script setup lang="ts">
+
+useSeoMeta({
+  title: 'List a vehicle',
+  robots: 'noindex'
+})
 definePageMeta({ middleware: 'owner' })
 
 const toast = useToast()

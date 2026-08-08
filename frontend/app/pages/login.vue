@@ -1,4 +1,9 @@
 <script setup lang="ts">
+
+useSeoMeta({
+  title: 'Log in',
+  robots: 'noindex'
+})
 const { login } = useAuth()
 const toast = useToast()
 

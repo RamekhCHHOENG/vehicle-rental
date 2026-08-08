@@ -3,6 +3,12 @@ import type { Vehicle } from '~/types'
 
 const api = useApi()
 
+useSeoMeta({
+  title: 'Browse vehicles',
+  description:
+    'Inspected cars and motorbikes for rent in Cambodia. Filter by type, location and price — what you see is the full price.'
+})
+
 const filters = reactive({
   type: 'all',
   location: '',

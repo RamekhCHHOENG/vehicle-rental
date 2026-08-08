@@ -1,4 +1,9 @@
 <script setup lang="ts">
+
+useSeoMeta({
+  title: 'My vehicles',
+  robots: 'noindex'
+})
 import type { Vehicle } from '~/types'
 
 definePageMeta({ middleware: 'owner' })

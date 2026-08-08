@@ -13,6 +13,21 @@ const { data, error } = await useAsyncData(
 const vehicle = computed(() => data.value?.vehicle)
 const selectedPhoto = ref(0)
 
+// Listing pages are the pages people search for: "rent Camry Phnom Penh".
+// Title and description come from the vehicle record itself.
+const photoUrlFor = usePhotoUrl()
+useSeoMeta({
+  title: () => vehicle.value
+    ? `${vehicle.value.make} ${vehicle.value.model} ${vehicle.value.year} — $${vehicle.value.price_per_day}/day in ${vehicle.value.location}`
+    : 'Vehicle',
+  description: () => vehicle.value
+    ? (vehicle.value.description || `Rent this inspected ${vehicle.value.type} in ${vehicle.value.location}. $${vehicle.value.price_per_day} per day, no hidden fees.`).slice(0, 160)
+    : undefined,
+  ogImage: () => vehicle.value?.photos?.[0]
+    ? photoUrlFor(vehicle.value.photos[0].file_path)
+    : undefined
+})
+
 // The spec sheet reads as a record, matching the inspection language.
 const specs = computed(() => {
   if (!vehicle.value) return []

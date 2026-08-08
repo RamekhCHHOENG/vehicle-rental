@@ -1,4 +1,9 @@
 <script setup lang="ts">
+
+useSeoMeta({
+  title: 'Admin panel',
+  robots: 'noindex'
+})
 import type { Vehicle, AdminUser } from '~/types'
 
 definePageMeta({ middleware: 'admin' })

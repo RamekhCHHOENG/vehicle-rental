@@ -1,4 +1,9 @@
 <script setup lang="ts">
+
+useSeoMeta({
+  title: 'Booking requests',
+  robots: 'noindex'
+})
 import type { Booking } from '~/types'
 
 definePageMeta({ middleware: 'owner' })
