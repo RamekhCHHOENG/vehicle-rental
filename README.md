@@ -13,7 +13,7 @@ before it goes live** — the platform's core trust feature.
 | Frontend  | Nuxt 4 · Nuxt UI · Tailwind CSS · Archivo |
 | Auth      | JWT in an httpOnly cookie · role-based    |
 | Dev env   | Docker Compose (hot reload on both sides) |
-| Deploy    | VPS · Docker Compose · Caddy (auto-HTTPS) |
+| Deploy    | Docker Compose · Caddy on a VPS, or any PaaS |
 
 ## Quick start (development)
 
@@ -23,6 +23,9 @@ docker compose up
 ```
 
 That builds and starts all three services with hot reload on both apps.
+Compose merges `docker-compose.override.yml` over `docker-compose.yml`
+automatically, and the override is what supplies hot reload — see
+[Compose layout](#compose-layout).
 
 - Web: http://localhost:3000
 - API: http://localhost:8090 (`/api/health` to check)
@@ -99,10 +102,35 @@ frontend/
     components/          VehicleCard, BookingForm, VehicleForm, StatusBadge
     composables/         useApi (cookie-aware fetch), useAuth, usePhotoUrl
     middleware/          auth / owner / admin route guards
-deploy/Caddyfile         production reverse proxy + HTTPS
-docker-compose.yml       development (hot reload)
-docker-compose.prod.yml  production (multi-stage builds + Caddy)
+deploy/Caddyfile             reverse proxy + HTTPS for the VPS path
+docker-compose.yml           the deployed stack
+docker-compose.override.yml  development layer, merged automatically
+docker-compose.prod.yml      adds Caddy for a bare VPS
 ```
+
+## Compose layout
+
+`docker-compose.yml` is the **deployed** stack: compiled Go binary, prebuilt
+Nitro output, no source mounted in, no published ports. `docker compose up`
+never runs it alone — Compose merges `docker-compose.override.yml` on top by
+convention, and that override is the development stack: `dev` build targets,
+the working tree bind-mounted in, air and Vite, and the loopback ports above.
+
+Naming a file explicitly skips the override, which is exactly what a deployment
+does:
+
+```bash
+docker compose up                                  # development
+docker compose -f docker-compose.yml up -d --build # the deployed stack
+```
+
+The split is not cosmetic. The development services mount `./backend` and
+`./frontend` over the images; a platform that builds from a checkout it then
+discards leaves those mounts pointing at empty directories, so air finds no
+config and Vite finds no `package.json`. The containers die on startup while
+the deploy still reports success, because `docker compose up` did return
+cleanly. Keeping production in the file every tool reaches for by default
+removes the failure mode.
 
 ## Design system — "Inspected"
 
@@ -174,12 +202,14 @@ Not built yet: suspending users, changing someone's role, and an admin view of i
 2. Point your domain's DNS A record at the server's IP.
 3. Clone the repo, then create `.env` with **production** values:
    strong `POSTGRES_PASSWORD`, long random `JWT_SECRET`, real `ADMIN_EMAIL`
-   / `ADMIN_PASSWORD`, and `NUXT_PUBLIC_API_BASE=https://yourdomain.com`.
+   / `ADMIN_PASSWORD`, and `WEB_ORIGIN` and `NUXT_PUBLIC_API_BASE` both set to
+   `https://yourdomain.com` — Caddy serves the site and the API from that one
+   domain.
 4. Edit `deploy/Caddyfile`: replace `example.com` with your domain.
-5. Start everything:
+5. Start everything — the base file plus the Caddy layer:
 
    ```bash
-   docker compose -f docker-compose.prod.yml up -d --build
+   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
    ```
 
    Caddy obtains the HTTPS certificate automatically. Uploaded photos and the
@@ -187,8 +217,34 @@ Not built yet: suspending users, changing someone's role, and an admin view of i
 6. Update after a code change:
 
    ```bash
-   git pull && docker compose -f docker-compose.prod.yml up -d --build
+   git pull && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
    ```
 
 **Backups**: `docker exec <postgres-container> pg_dump -U carrental carrental > backup.sql`
 on a cron job, plus a copy of the `uploads` volume.
+
+## Deploying to a PaaS (Coolify, Dokploy, …)
+
+The platform runs its own reverse proxy, so it needs the base file and nothing
+else — no Caddy, or the two fight over ports 80 and 443. Point the app at
+`docker-compose.yml`.
+
+Give `web` and `api` a domain each, and make them **subdomains of the same
+domain** (`yan.example.com`, `api.example.com`). The session cookie is
+`SameSite=Lax`, so an API on an unrelated domain would be same-origin for
+neither and login would fail with no visible error.
+
+Then set, in the platform's environment variables:
+
+| Variable               | Value                                        |
+|------------------------|----------------------------------------------|
+| `POSTGRES_PASSWORD`    | `openssl rand -base64 32`                    |
+| `JWT_SECRET`           | `openssl rand -base64 32`                    |
+| `ADMIN_EMAIL`          | your admin address                           |
+| `ADMIN_PASSWORD`       | `openssl rand -base64 32`                    |
+| `WEB_ORIGIN`           | `https://` + the domain routed to `web`      |
+| `NUXT_PUBLIC_API_BASE` | `https://` + the domain routed to `api`      |
+
+`WEB_ORIGIN` is the one that is easy to miss: it is the only origin the API's
+CORS policy admits, and a wrong value fails every request from the deployed
+site while the containers themselves look perfectly healthy.
