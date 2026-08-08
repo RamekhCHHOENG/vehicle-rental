@@ -100,7 +100,7 @@ const steps = [
           <div v-for="step in steps" :key="step.n">
             <div class="flex items-center gap-3 mb-3">
               <span
-                class="font-display numeric text-[13px] font-bold w-7 h-7 rounded-full grid place-items-center bg-saffron-400 text-petrol-900"
+                class="font-display numeric text-[13px] font-bold w-7 h-7 rounded-[var(--r-small)] grid place-items-center bg-saffron-400 text-petrol-900"
               >{{ step.n }}</span>
               <span class="h-px flex-1 bg-[var(--ui-border)]" />
             </div>

@@ -47,8 +47,17 @@
 
 /* ---------- Nuxt UI semantic tokens ---------- */
 
+/* Radius scale. Records and forms have crisp corners, so the whole system is
+   tighter than the designkit's default. Tune the four values here. */
 :root {
-  --ui-radius: 0.7rem;
+  --r-surface: 12px;   /* cards, panels, dialogs */
+  --r-control: 8px;    /* buttons, inputs, selects */
+  --r-media: 10px;     /* photographs */
+  --r-small: 5px;      /* badges, the seal, numbered markers */
+}
+
+:root {
+  --ui-radius: 0.5rem;
 
   --ui-bg: #fcfbf8;              /* paper, barely warm */
   --ui-bg-muted: #f3f7f5;
@@ -130,7 +139,7 @@ body {
 
 .dk-card {
   border: 1px solid var(--ui-border);
-  border-radius: 20px;
+  border-radius: var(--r-surface);
   background: color-mix(in srgb, var(--ui-bg-elevated) 94%, transparent);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 8px 30px rgb(10 36 34 / 0.05);
   backdrop-filter: blur(22px) saturate(150%);
@@ -172,7 +181,7 @@ body {
   gap: 5px;
   padding: 5px 10px 5px 7px;
   border: 1.5px solid color-mix(in srgb, #f2a93b 55%, transparent);
-  border-radius: 999px;
+  border-radius: var(--r-small);
   background: color-mix(in srgb, #f2a93b 14%, transparent);
   color: #965312;
   font-family: var(--font-display);

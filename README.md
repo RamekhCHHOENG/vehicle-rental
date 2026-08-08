@@ -1,4 +1,4 @@
-# Car Rental Marketplace
+# Yan — inspected vehicle rental
 
 A two-sided vehicle rental marketplace: owners list cars/motorbikes, renters book
 them in 3 steps with transparent pricing, and an **admin verifies every listing
@@ -74,9 +74,10 @@ docker-compose.prod.yml  production (multi-stage builds + Caddy)
 
 ## Design system — "Inspected"
 
-The visual layer sits on top of `@ramekhchhoeng/designkit`: the kit's structure
-(pill buttons, 20px glass cards, tight tracking, system body font) is unchanged,
-and only the brand layer differs.
+The visual layer starts from `@ramekhchhoeng/designkit` — its frosted-glass
+surfaces, tight tracking, press-on-tap feedback and system body font are kept.
+The radii are deliberately tighter than the kit's: records and forms have crisp
+corners, not bubbly ones.
 
 - **Palette** — petrol ink `#0a2422`, paper `#fcfbf8`, and a single saffron
   accent `#f2a93b`. Actions and the verification seal share that one colour, so
@@ -89,9 +90,15 @@ and only the brand layer differs.
 - **Signature** — `VerifiedSeal`, a stamped "Inspected" mark used **once per
   surface**, over vehicle photography. Pass `on-photo` when it sits on an image
   so it gets its own dark ground.
+- **Radius** — four values, all in `main.css`: `--r-surface` 12px (cards,
+  dialogs), `--r-control` 8px (buttons, inputs), `--r-media` 10px (photos),
+  `--r-small` 5px (badges, the seal, numbered markers). Nothing hardcodes a
+  radius, so the whole system retunes from those four lines.
 - **Logo** — `AppLogo`. A licence plate whose checkmark breaks out through the
   top edge; the plate stroke is masked along the check's path so the two read as
   one object. Rename the product in one place: the `name` prop default.
+- **Name** — Yan (យាន), Khmer for "vehicle" — it covers motorbikes as well as
+  cars, which "CarRental" did not.
 - **Themes** — light and dark, toggled in the header and persisted by
   `@nuxtjs/color-mode`. Dark mode grounds on deep petrol `#061715`, not black.
 

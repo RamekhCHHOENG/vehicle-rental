@@ -11,7 +11,7 @@ await useAsyncData('auth-init', async () => {
   <div class="min-h-screen flex flex-col">
     <header class="dk-nav sticky top-0 z-40 border-b border-[var(--ui-border-muted)]">
       <UContainer class="flex items-center justify-between h-14 gap-4">
-        <NuxtLink to="/" class="shrink-0" aria-label="CarRental home">
+        <NuxtLink to="/" class="shrink-0" aria-label="Yan home">
           <AppLogo compact-on-mobile />
         </NuxtLink>
 
@@ -53,7 +53,10 @@ await useAsyncData('auth-init', async () => {
 
     <footer class="border-t border-[var(--ui-border-muted)] mt-20">
       <UContainer class="py-10 flex flex-wrap items-center justify-between gap-4">
-        <AppLogo :size="20" />
+        <div class="flex items-center gap-2.5">
+          <AppLogo :size="20" />
+          <span class="text-[13px] text-[var(--ui-text-dimmed)]">យាន</span>
+        </div>
         <p class="text-[12px] text-[var(--ui-text-dimmed)]">
           Every vehicle inspected before it goes live.
         </p>

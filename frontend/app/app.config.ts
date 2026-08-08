@@ -4,16 +4,11 @@ export default defineAppConfig({
       primary: 'saffron',
       neutral: 'petrol'
     },
-    // Pill buttons with the designkit press effect. Saffron is a light
-    // accent, so solid buttons carry ink text rather than white.
+    // Radii follow the scale in main.css. Saffron is a light accent, so solid
+    // buttons carry ink text rather than white.
     button: {
       slots: {
-        base: 'rounded-full font-semibold tracking-[-0.01em] transition-all duration-150 active:scale-[0.975] justify-center'
-      },
-      variants: {
-        color: {
-          primary: ''
-        }
+        base: 'rounded-[var(--r-control)] font-semibold tracking-[-0.01em] transition-all duration-150 active:scale-[0.985] justify-center'
       },
       compoundVariants: [
         {
@@ -25,23 +20,24 @@ export default defineAppConfig({
     },
     badge: {
       slots: {
-        base: 'rounded-full font-semibold'
+        base: 'rounded-[var(--r-small)] font-semibold'
       }
     },
     tabs: {
       slots: {
-        indicator: 'bg-saffron-400',
+        list: 'rounded-[var(--r-control)]',
+        indicator: 'bg-saffron-400 rounded-[calc(var(--r-control)-2px)]',
         trigger: 'font-medium'
       }
     },
     card: {
       slots: {
-        root: 'rounded-[20px]'
+        root: 'rounded-[var(--r-surface)]'
       }
     },
-    input: { slots: { base: 'rounded-[11px]' } },
-    select: { slots: { base: 'rounded-[11px]' } },
-    textarea: { slots: { base: 'rounded-[11px]' } },
-    modal: { slots: { content: 'rounded-[22px]' } }
+    input: { slots: { base: 'rounded-[var(--r-control)]' } },
+    select: { slots: { base: 'rounded-[var(--r-control)]' } },
+    textarea: { slots: { base: 'rounded-[var(--r-control)]' } },
+    modal: { slots: { content: 'rounded-[var(--r-surface)]' } }
   }
 })

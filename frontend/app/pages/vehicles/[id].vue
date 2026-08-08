@@ -44,7 +44,7 @@ const specs = computed(() => {
           <img
             :src="photoUrl(vehicle.photos?.[selectedPhoto]?.file_path)"
             :alt="`${vehicle.make} ${vehicle.model}`"
-            class="w-full h-[340px] object-cover rounded-[20px]"
+            class="w-full h-[340px] object-cover rounded-[var(--r-media)]"
           >
           <VerifiedSeal
             v-if="vehicle.status === 'approved'"
@@ -59,7 +59,7 @@ const specs = computed(() => {
           <button
             v-for="(photo, i) in vehicle.photos"
             :key="photo.id"
-            class="rounded-xl overflow-hidden border-2 transition-colors shrink-0"
+            class="rounded-[var(--r-control)] overflow-hidden border-2 transition-colors shrink-0"
             :class="i === selectedPhoto ? 'border-saffron-400' : 'border-transparent'"
             :aria-label="`Show photo ${i + 1}`"
             @click="selectedPhoto = i"

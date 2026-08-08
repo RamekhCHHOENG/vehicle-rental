@@ -13,7 +13,7 @@ withDefaults(defineProps<{
   compactOnMobile?: boolean
   size?: number
 }>(), {
-  name: 'CarRental',
+  name: 'Yan',
   showName: true,
   compactOnMobile: false,
   size: 26

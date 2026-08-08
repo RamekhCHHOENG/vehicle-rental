@@ -153,7 +153,7 @@ function formatDate(iso: string) {
       <div v-else class="space-y-3">
         <div v-for="v in vehicles" :key="v.id" class="dk-card p-4">
           <div class="flex gap-4">
-            <img :src="photoUrl(v.photos?.[0]?.file_path)" class="w-32 h-24 object-cover rounded-xl flex-none" :alt="v.make">
+            <img :src="photoUrl(v.photos?.[0]?.file_path)" class="w-32 h-24 object-cover rounded-[var(--r-control)] flex-none" :alt="v.make">
 
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
