@@ -8,6 +8,9 @@ type Config struct {
 	JWTSecret     string
 	AdminEmail    string
 	AdminPassword string
+	// Origin the browser loads the site from, allowed through CORS. Behind a
+	// reverse proxy the API is same-origin and this is unused.
+	WebOrigin string
 }
 
 func Load() Config {
@@ -17,6 +20,7 @@ func Load() Config {
 		JWTSecret:     getenv("JWT_SECRET", "dev-secret-do-not-use-in-production"),
 		AdminEmail:    getenv("ADMIN_EMAIL", "admin@carrental.local"),
 		AdminPassword: getenv("ADMIN_PASSWORD", "admin123"),
+		WebOrigin:     getenv("WEB_ORIGIN", "http://localhost:3000"),
 	}
 }
 

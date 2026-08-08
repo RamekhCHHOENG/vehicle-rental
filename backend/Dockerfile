@@ -1,14 +1,15 @@
 # --- dev: hot reload with air ---
-FROM golang:1.25-alpine AS dev
+FROM golang:1.26-alpine AS dev
 WORKDIR /app
-RUN go install github.com/air-verse/air@latest
+# Pinned, not @latest: a floating tool version breaks the image without warning.
+RUN go install github.com/air-verse/air@v1.67.4
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 CMD ["air", "-c", ".air.toml"]
 
 # --- build: compile static binary ---
-FROM golang:1.25-alpine AS build
+FROM golang:1.26-alpine AS build
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download

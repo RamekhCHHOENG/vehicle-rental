@@ -22,9 +22,20 @@ cp .env.example .env        # then edit values
 docker compose up
 ```
 
+That builds and starts all three services with hot reload on both apps.
+
 - Web: http://localhost:3000
 - API: http://localhost:8090 (`/api/health` to check)
 - Postgres: localhost:5434
+
+All three publish on `127.0.0.1` only. Docker's default is `0.0.0.0`, which
+would put the database — dev password and all — on the public internet whenever
+the host is reachable.
+
+Two addresses point at the API because SSR and the browser reach it differently:
+`NUXT_PUBLIC_API_BASE` is what the visitor's browser calls, while
+`NUXT_API_INTERNAL` (`http://api:8080`) is what the Nuxt server calls over the
+compose network. `useApi` picks between them.
 
 The admin account is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`
 on first startup.

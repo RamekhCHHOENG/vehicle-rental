@@ -1,3 +1,5 @@
+# Development stack: `docker compose up`.
+# Both apps hot-reload — the Go API through air, Nuxt through Vite.
 services:
   postgres:
     image: postgres:17-alpine
@@ -6,14 +8,18 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carrental_dev_password}
       POSTGRES_DB: ${POSTGRES_DB:-carrental}
     ports:
-      - "5434:5432"
+      # Bound to the loopback interface on purpose. Docker's default publishes
+      # on 0.0.0.0, which puts the database on the public internet if the host
+      # is reachable — with the weak dev password below.
+      # 5434 on the host: 5432 is usually taken by another local Postgres.
+      - "127.0.0.1:5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-carrental}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   api:
     build:
@@ -25,27 +31,45 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-secret-do-not-use-in-production}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@carrental.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      # Origin the browser loads the site from, allowed through CORS.
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
     ports:
-      - "8090:8080"
+      - "127.0.0.1:8090:8080"
     volumes:
       - ./backend:/app
-      - ./backend/uploads:/app/uploads
+      # Keep the container's build cache off the host mount.
+      - api_tmp:/app/tmp
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 40s
 
   web:
     image: node:22-alpine
     working_dir: /app
-    command: sh -c "npm install && npm run dev"
+    # --host binds 0.0.0.0; without it Vite only listens inside the container.
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     environment:
+      # Browser-facing: the host port published by the api service.
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-http://localhost:8090}
+      # Server-side: SSR reaches the API over the compose network instead.
+      NUXT_API_INTERNAL: http://api:8080
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - ./frontend:/app
+      # Linux-built modules must not be overwritten by the host's macOS ones.
       - web_node_modules:/app/node_modules
+    depends_on:
+      api:
+        condition: service_started
 
 volumes:
   pgdata:
+  api_tmp:
   web_node_modules:
