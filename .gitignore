@@ -1,0 +1,10 @@
+.env
+node_modules/
+.nuxt/
+.output/
+dist/
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/bin/
+.DS_Store
+*.log
