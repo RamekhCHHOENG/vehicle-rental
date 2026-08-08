@@ -21,6 +21,20 @@ export interface Vehicle {
   rejection_reason?: string
   photos: VehiclePhoto[]
   created_at: string
+  owner?: { id: string, full_name: string, email: string }
+  /** Only present on admin listings: bookings that a take-down would disrupt. */
+  active_bookings?: number
+}
+
+export interface AdminUser {
+  id: string
+  email: string
+  full_name: string
+  phone: string
+  role: 'renter' | 'owner' | 'admin'
+  created_at: string
+  vehicle_count: number
+  booking_count: number
 }
 
 export interface Booking {

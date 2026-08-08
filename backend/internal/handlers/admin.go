@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -15,6 +16,13 @@ import (
 
 type AdminHandler struct {
 	DB *gorm.DB
+}
+
+// adminVehicleRow is a vehicle plus the count of bookings that would be
+// disrupted if an admin took the listing down.
+type adminVehicleRow struct {
+	models.Vehicle
+	ActiveBookings int64 `json:"active_bookings"`
 }
 
 // ListVehicles returns vehicles filtered by status (default: pending queue).
@@ -34,7 +42,45 @@ func (h *AdminHandler) ListVehicles(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusInternalServerError, "could not load vehicles")
 		return
 	}
-	httputil.JSON(w, http.StatusOK, vehicles)
+
+	httputil.JSON(w, http.StatusOK, h.withActiveBookings(vehicles))
+}
+
+// withActiveBookings attaches the live booking count to each vehicle using a
+// single grouped query rather than one query per vehicle.
+func (h *AdminHandler) withActiveBookings(vehicles []models.Vehicle) []adminVehicleRow {
+	rows := make([]adminVehicleRow, len(vehicles))
+	for i, v := range vehicles {
+		rows[i] = adminVehicleRow{Vehicle: v}
+	}
+	if len(vehicles) == 0 {
+		return rows
+	}
+
+	ids := make([]uuid.UUID, len(vehicles))
+	for i, v := range vehicles {
+		ids[i] = v.ID
+	}
+
+	var counts []struct {
+		VehicleID uuid.UUID
+		Total     int64
+	}
+	h.DB.Model(&models.Booking{}).
+		Select("vehicle_id, COUNT(*) AS total").
+		Where("vehicle_id IN ? AND status IN ?", ids,
+			[]models.BookingStatus{models.BookingRequested, models.BookingConfirmed}).
+		Group("vehicle_id").
+		Scan(&counts)
+
+	byVehicle := make(map[uuid.UUID]int64, len(counts))
+	for _, c := range counts {
+		byVehicle[c.VehicleID] = c.Total
+	}
+	for i := range rows {
+		rows[i].ActiveBookings = byVehicle[rows[i].ID]
+	}
+	return rows
 }
 
 func (h *AdminHandler) vehicleByID(w http.ResponseWriter, r *http.Request) (*models.Vehicle, bool) {
@@ -67,6 +113,7 @@ func (h *AdminHandler) Approve(w http.ResponseWriter, r *http.Request) {
 }
 
 // Reject hides a vehicle and records why, so the owner can fix and relist.
+// It also serves as the take-down action for an already-approved listing.
 func (h *AdminHandler) Reject(w http.ResponseWriter, r *http.Request) {
 	vehicle, ok := h.vehicleByID(w, r)
 	if !ok {
@@ -90,14 +137,42 @@ func (h *AdminHandler) Reject(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, vehicle)
 }
 
-// ListUsers returns all users (newest first).
+// adminUserRow lists the columns an admin may see. Selecting fields explicitly
+// (rather than SELECT *) guarantees the password hash can never leak.
+type adminUserRow struct {
+	ID           uuid.UUID   `json:"id"`
+	Email        string      `json:"email"`
+	FullName     string      `json:"full_name"`
+	Phone        string      `json:"phone"`
+	Role         models.Role `json:"role"`
+	CreatedAt    time.Time   `json:"created_at"`
+	VehicleCount int64       `json:"vehicle_count"`
+	BookingCount int64       `json:"booking_count"`
+}
+
+// ListUsers returns every user with how many vehicles they list and how many
+// bookings they have made. Supports ?role= and ?q= (name or email search).
+// GET /api/admin/users?role=owner&q=sok
 func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
-	var users []models.User
-	if err := h.DB.Order("created_at DESC").Find(&users).Error; err != nil {
+	q := h.DB.Model(&models.User{}).
+		Select(`users.id, users.email, users.full_name, users.phone, users.role, users.created_at,
+			(SELECT COUNT(*) FROM vehicles WHERE vehicles.owner_id = users.id) AS vehicle_count,
+			(SELECT COUNT(*) FROM bookings WHERE bookings.renter_id = users.id) AS booking_count`)
+
+	if role := r.URL.Query().Get("role"); role != "" {
+		q = q.Where("users.role = ?", role)
+	}
+	if search := strings.TrimSpace(r.URL.Query().Get("q")); search != "" {
+		like := "%" + search + "%"
+		q = q.Where("users.full_name ILIKE ? OR users.email ILIKE ?", like, like)
+	}
+
+	rows := []adminUserRow{}
+	if err := q.Order("users.created_at DESC").Scan(&rows).Error; err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "could not load users")
 		return
 	}
-	httputil.JSON(w, http.StatusOK, users)
+	httputil.JSON(w, http.StatusOK, rows)
 }
 
 // Stats returns the Key Metrics counters for the dashboard.

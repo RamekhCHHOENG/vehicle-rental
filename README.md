@@ -91,7 +91,17 @@ docker-compose.prod.yml  production (multi-stage builds + Caddy)
 | POST/GET/PUT/DELETE `/api/owner/vehicles…` + `/photos` | owner | manage own listings |
 | GET `/api/owner/bookings`, POST `…/confirm` `…/reject` `…/complete` | owner | handle requests |
 | POST/GET `/api/bookings`, POST `…/cancel` `…/review` | renter | book, cancel, review |
-| GET `/api/admin/vehicles` `…/users` `…/stats`, POST `…/approve` `…/reject` | admin | verification & metrics |
+| GET `/api/admin/vehicles` `…/users` `…/stats`, POST `…/approve` `…/reject` | admin | verification, users & metrics |
+
+### What the admin can do
+
+- **Verify listings** — review the pending queue, approve (goes public) or reject with a reason the owner sees.
+- **Take a live listing down** — the same reject action works on an approved listing, so a vehicle that goes bad after approval can be pulled. The panel warns first if the vehicle has active bookings; existing bookings are left untouched.
+- **Restore** — re-approve a rejected listing; the stale rejection reason is cleared.
+- **Browse all users** — `GET /api/admin/users` (with `?role=` and `?q=` search) returns every user plus how many vehicles they list and bookings they have made. Columns are selected explicitly so the password hash can never be serialised.
+- **See platform metrics** — users, vehicles, pending/approved counts, bookings, completions.
+
+Not built yet: suspending users, changing someone's role, and an admin view of individual bookings.
 
 ## Deploying to a VPS (DigitalOcean, Hetzner, …)
 
