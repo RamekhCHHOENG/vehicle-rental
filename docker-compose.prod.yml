@@ -1,0 +1,63 @@
+# Production deployment: docker compose -f docker-compose.prod.yml up -d
+# Requires a .env file with strong POSTGRES_PASSWORD, JWT_SECRET, ADMIN_PASSWORD,
+# and NUXT_PUBLIC_API_BASE set to your public domain (e.g. https://example.com).
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-carrental}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-carrental}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-carrental}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      target: prod
+    restart: unless-stopped
+    environment:
+      API_PORT: "8080"
+      DB_URL: host=postgres port=5432 user=${POSTGRES_USER:-carrental} password=${POSTGRES_PASSWORD:?set in .env} dbname=${POSTGRES_DB:-carrental} sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:?set in .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set in .env}
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      target: prod
+    restart: unless-stopped
+    environment:
+      NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:?set in .env}
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - web
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

@@ -1,28 +1,119 @@
 # Car Rental Marketplace
 
-A two-sided vehicle rental marketplace: owners list cars/motorbikes, renters book them,
-and an admin verifies every listing before it goes live.
+A two-sided vehicle rental marketplace: owners list cars/motorbikes, renters book
+them in 3 steps with transparent pricing, and an **admin verifies every listing
+before it goes live** — the platform's core trust feature.
 
 ## Stack
 
-- **Backend**: Go (chi router + GORM)
-- **Database**: PostgreSQL
-- **Frontend**: Nuxt + Nuxt UI
-- **Dev environment**: Docker Compose
+| Layer     | Tech                                      |
+|-----------|-------------------------------------------|
+| Backend   | Go · chi router · GORM                    |
+| Database  | PostgreSQL 17                             |
+| Frontend  | Nuxt 4 · Nuxt UI · Tailwind CSS           |
+| Auth      | JWT in an httpOnly cookie · role-based    |
+| Dev env   | Docker Compose (hot reload on both sides) |
+| Deploy    | VPS · Docker Compose · Caddy (auto-HTTPS) |
 
-## Getting started
+## Quick start (development)
 
 ```bash
-cp .env.example .env   # then edit values
+cp .env.example .env        # then edit values
 docker compose up
 ```
 
-- API: http://localhost:8080
 - Web: http://localhost:3000
+- API: http://localhost:8090 (`/api/health` to check)
+- Postgres: localhost:5434
+
+The admin account is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`
+on first startup.
+
+You can also run the pieces natively (Postgres still via Docker):
+
+```bash
+docker compose up -d postgres
+cd backend && set -a && source ../.env && set +a && go run ./cmd/api
+```
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+## Tests
+
+```bash
+cd backend && go test ./...
+```
+
+Covers the booking rules (price, day counting, date-overlap) and the auth
+middleware (valid/expired/forged tokens, role checks) with table-driven tests.
 
 ## Project layout
 
 ```
-backend/    Go API (cmd/api is the entrypoint)
-frontend/   Nuxt app
+backend/
+  cmd/api/main.go        entrypoint: config → DB → routes → listen
+  internal/
+    config/              env var loading
+    database/            GORM connect, AutoMigrate, admin seed
+    models/              User, Vehicle, VehiclePhoto, Booking, Review
+    handlers/            auth, vehicles, uploads, bookings, admin
+    middleware/          JWT auth + role-based access control
+    httputil/            JSON response helpers
+frontend/
+  app/
+    pages/               file-based routes (public, owner/, admin/, dashboard/)
+    components/          VehicleCard, BookingForm, VehicleForm, StatusBadge
+    composables/         useApi (cookie-aware fetch), useAuth, usePhotoUrl
+    middleware/          auth / owner / admin route guards
+deploy/Caddyfile         production reverse proxy + HTTPS
+docker-compose.yml       development (hot reload)
+docker-compose.prod.yml  production (multi-stage builds + Caddy)
 ```
+
+## Roles & flow
+
+1. **Owner** signs up → lists a vehicle with photos → status `pending`.
+2. **Admin** reviews the queue → approves (goes public) or rejects with a reason.
+3. **Renter** browses approved vehicles → books in 3 steps (dates → review →
+   confirm). Price is computed server-side; dates clashing with a confirmed
+   booking are refused.
+4. **Owner** confirms or rejects the request, and marks the vehicle returned.
+5. **Renter** leaves a 1–5★ review shown on the public listing.
+
+## API overview
+
+| Method & path | Who | What |
+|---|---|---|
+| POST `/api/auth/register` · `/login` · `/logout`, GET `/me` | public / any | session management |
+| GET `/api/vehicles`, `/api/vehicles/{id}` | public | browse approved listings |
+| POST/GET/PUT/DELETE `/api/owner/vehicles…` + `/photos` | owner | manage own listings |
+| GET `/api/owner/bookings`, POST `…/confirm` `…/reject` `…/complete` | owner | handle requests |
+| POST/GET `/api/bookings`, POST `…/cancel` `…/review` | renter | book, cancel, review |
+| GET `/api/admin/vehicles` `…/users` `…/stats`, POST `…/approve` `…/reject` | admin | verification & metrics |
+
+## Deploying to a VPS (DigitalOcean, Hetzner, …)
+
+1. Provision a small VPS (1–2 GB RAM), install Docker + the compose plugin.
+2. Point your domain's DNS A record at the server's IP.
+3. Clone the repo, then create `.env` with **production** values:
+   strong `POSTGRES_PASSWORD`, long random `JWT_SECRET`, real `ADMIN_EMAIL`
+   / `ADMIN_PASSWORD`, and `NUXT_PUBLIC_API_BASE=https://yourdomain.com`.
+4. Edit `deploy/Caddyfile`: replace `example.com` with your domain.
+5. Start everything:
+
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d --build
+   ```
+
+   Caddy obtains the HTTPS certificate automatically. Uploaded photos and the
+   database live in named Docker volumes and survive restarts.
+6. Update after a code change:
+
+   ```bash
+   git pull && docker compose -f docker-compose.prod.yml up -d --build
+   ```
+
+**Backups**: `docker exec <postgres-container> pg_dump -U carrental carrental > backup.sql`
+on a cron job, plus a copy of the `uploads` volume.
