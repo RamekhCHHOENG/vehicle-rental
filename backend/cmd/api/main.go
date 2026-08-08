@@ -27,6 +27,7 @@ func main() {
 	auth := &handlers.AuthHandler{DB: db, JWTSecret: cfg.JWTSecret}
 	vehicles := &handlers.VehicleHandler{DB: db}
 	admin := &handlers.AdminHandler{DB: db}
+	bookings := &handlers.BookingHandler{DB: db}
 
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
@@ -65,6 +66,20 @@ func main() {
 		r.Delete("/vehicles/{id}", vehicles.DeleteOwn)
 		r.Post("/vehicles/{id}/photos", vehicles.UploadPhoto)
 		r.Delete("/vehicles/{id}/photos/{photoId}", vehicles.DeletePhoto)
+		r.Get("/bookings", bookings.ListForOwner)
+		r.Post("/bookings/{id}/confirm", bookings.Confirm)
+		r.Post("/bookings/{id}/reject", bookings.RejectBooking)
+		r.Post("/bookings/{id}/complete", bookings.Complete)
+	})
+
+	// Renter bookings.
+	r.Route("/api/bookings", func(r chi.Router) {
+		r.Use(middleware.RequireAuth(cfg.JWTSecret))
+		r.Use(middleware.RequireRole(models.RoleRenter))
+		r.Post("/", bookings.Create)
+		r.Get("/", bookings.ListOwn)
+		r.Post("/{id}/cancel", bookings.Cancel)
+		r.Post("/{id}/review", bookings.Review)
 	})
 
 	// Admin verification panel.
