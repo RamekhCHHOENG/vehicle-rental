@@ -4,13 +4,13 @@ import type { Vehicle } from '~/types'
 const api = useApi()
 
 const filters = reactive({
-  type: '',
+  type: 'all',
   location: '',
   max_price: undefined as number | undefined
 })
 
 const typeOptions = [
-  { label: 'All types', value: '' },
+  { label: 'All types', value: 'all' },
   { label: 'Cars', value: 'car' },
   { label: 'Motorbikes', value: 'motorbike' }
 ]
@@ -19,7 +19,7 @@ const { data: vehicles, status, refresh } = await useAsyncData(
   'vehicles-browse',
   () => api<Vehicle[]>('/api/vehicles', {
     query: {
-      type: filters.type || undefined,
+      type: filters.type === 'all' ? undefined : filters.type,
       location: filters.location || undefined,
       max_price: filters.max_price || undefined
     }
