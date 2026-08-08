@@ -10,7 +10,7 @@ before it goes live** — the platform's core trust feature.
 |-----------|-------------------------------------------|
 | Backend   | Go · chi router · GORM                    |
 | Database  | PostgreSQL 17                             |
-| Frontend  | Nuxt 4 · Nuxt UI · Tailwind CSS           |
+| Frontend  | Nuxt 4 · Nuxt UI · Tailwind CSS · Archivo |
 | Auth      | JWT in an httpOnly cookie · role-based    |
 | Dev env   | Docker Compose (hot reload on both sides) |
 | Deploy    | VPS · Docker Compose · Caddy (auto-HTTPS) |
@@ -71,6 +71,32 @@ deploy/Caddyfile         production reverse proxy + HTTPS
 docker-compose.yml       development (hot reload)
 docker-compose.prod.yml  production (multi-stage builds + Caddy)
 ```
+
+## Design system — "Inspected"
+
+The visual layer sits on top of `@ramekhchhoeng/designkit`: the kit's structure
+(pill buttons, 20px glass cards, tight tracking, system body font) is unchanged,
+and only the brand layer differs.
+
+- **Palette** — petrol ink `#0a2422`, paper `#fcfbf8`, and a single saffron
+  accent `#f2a93b`. Actions and the verification seal share that one colour, so
+  pressing the button and trusting the platform are the same gesture. Saffron is
+  light, so anything sitting on it takes ink text, never white.
+- **Type** — Archivo (variable, width axis) for display, set wide with tight
+  tracking so headings read like signage rather than editorial. The designkit's
+  system stack stays for body. `.numeric` applies tabular figures so prices and
+  dates line up like a receipt.
+- **Signature** — `VerifiedSeal`, a stamped "Inspected" mark used **once per
+  surface**, over vehicle photography. Pass `on-photo` when it sits on an image
+  so it gets its own dark ground.
+- **Logo** — `AppLogo`. A licence plate whose checkmark breaks out through the
+  top edge; the plate stroke is masked along the check's path so the two read as
+  one object. Rename the product in one place: the `name` prop default.
+- **Themes** — light and dark, toggled in the header and persisted by
+  `@nuxtjs/color-mode`. Dark mode grounds on deep petrol `#061715`, not black.
+
+Tokens live in `frontend/app/assets/css/main.css`; component shapes in
+`frontend/app/app.config.ts`.
 
 ## Roles & flow
 

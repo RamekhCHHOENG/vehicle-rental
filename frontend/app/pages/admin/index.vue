@@ -109,7 +109,8 @@ function formatDate(iso: string) {
 
 <template>
   <UContainer class="py-10">
-    <h1 class="text-[32px] font-semibold tracking-[-0.035em] mb-8">Admin panel</h1>
+    <p class="eyebrow mb-3">Verification &amp; oversight</p>
+    <h1 class="display-md text-[34px] mb-8">Admin panel</h1>
 
     <!-- Key metrics -->
     <div v-if="stats" class="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-10">

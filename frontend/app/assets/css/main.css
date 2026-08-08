@@ -1,102 +1,218 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-/* ---- Design tokens ported from @ramekhchhoeng/designkit (Apple-inspired) ---- */
+/* Display face: a signage grotesque with a width axis — the vehicle world's
+   native typography (plates, road signs, inspection forms). */
+@import "@fontsource-variable/archivo/wdth.css";
+
+/* ============================================================
+   "Inspected" — brand layer over @ramekhchhoeng/designkit
+   Structure (pill buttons, 20px glass cards, tight tracking,
+   system body font) is the designkit's. Only the brand changes:
+   petrol ink, one saffron accent, and a display face.
+   ============================================================ */
+
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-display: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Apple blue scale (designkit --dk-blue: #0071e3, dark #2997ff) */
-  --color-apple-50: #f0f7ff;
-  --color-apple-100: #e0efff;
-  --color-apple-200: #b9dcff;
-  --color-apple-300: #85c2ff;
-  --color-apple-400: #2997ff;
-  --color-apple-500: #0071e3;
-  --color-apple-600: #0064c8;
-  --color-apple-700: #0055a8;
-  --color-apple-800: #00458a;
-  --color-apple-900: #003a72;
-  --color-apple-950: #00234a;
+  /* Saffron — the single accent. Actions and the verification seal share it,
+     so pressing the button and trusting the platform are one gesture. */
+  --color-saffron-50: #fdf6e9;
+  --color-saffron-100: #fae9c8;
+  --color-saffron-200: #f6d493;
+  --color-saffron-300: #f2bd5e;
+  --color-saffron-400: #f2a93b;
+  --color-saffron-500: #e08e1a;
+  --color-saffron-600: #bd7012;
+  --color-saffron-700: #965312;
+  --color-saffron-800: #7a4315;
+  --color-saffron-900: #653815;
+  --color-saffron-950: #3a1c07;
 
-  /* Apple gray system (designkit surfaces + text) */
-  --color-neutral-50: #f5f5f7;
-  --color-neutral-100: #e8e8ed;
-  --color-neutral-200: #d2d2d7;
-  --color-neutral-300: #b8b8bd;
-  --color-neutral-400: #86868b;
-  --color-neutral-500: #6e6e73;
-  --color-neutral-600: #515154;
-  --color-neutral-700: #3a3a3c;
-  --color-neutral-800: #2c2c2e;
-  --color-neutral-900: #1d1d1f;
-  --color-neutral-950: #0a0a0a;
+  /* Petrol — ink, surfaces, and secondary text. Green-cast neutrals read
+     warmer and less clinical than pure grays. */
+  --color-petrol-50: #f3f7f5;
+  --color-petrol-100: #e9eeec;
+  --color-petrol-200: #d3ddda;
+  --color-petrol-300: #adc0bb;
+  --color-petrol-400: #7f9a94;
+  --color-petrol-500: #667a75;
+  --color-petrol-600: #4c605b;
+  --color-petrol-700: #3d4e4a;
+  --color-petrol-800: #0e5148;
+  --color-petrol-900: #0a2422;
+  --color-petrol-950: #061715;
 }
 
-/* Nuxt UI semantic tokens */
+/* ---------- Nuxt UI semantic tokens ---------- */
+
 :root {
   --ui-radius: 0.7rem;
-  --ui-bg: #ffffff;
-  --ui-text: #1d1d1f;
-  --ui-text-muted: #6e6e73;
-  --ui-text-dimmed: #86868b;
-  --ui-border: rgb(29 29 31 / 0.13);
-  --ui-border-muted: rgb(29 29 31 / 0.09);
-  --ui-bg-muted: #f5f5f7;
-  --ui-bg-elevated: #fbfbfd;
+
+  --ui-bg: #fcfbf8;              /* paper, barely warm */
+  --ui-bg-muted: #f3f7f5;
+  --ui-bg-elevated: #ffffff;
+  --ui-text: #0a2422;            /* ink */
+  --ui-text-muted: #667a75;      /* stone */
+  --ui-text-dimmed: #7f9a94;
+  --ui-border: rgb(10 36 34 / 0.13);
+  --ui-border-muted: rgb(10 36 34 / 0.08);
+  --ui-border-accented: rgb(10 36 34 / 0.18);
 }
 
 .dark {
-  --ui-bg: #000000;
-  --ui-text: #f5f5f7;
-  --ui-text-muted: #a1a1a6;
-  --ui-text-dimmed: #8e8e93;
-  --ui-border: rgb(255 255 255 / 0.14);
-  --ui-border-muted: rgb(255 255 255 / 0.09);
-  --ui-bg-muted: #1c1c1e;
-  --ui-bg-elevated: #242426;
+  --ui-bg: #061715;              /* deep petrol, not black */
+  --ui-bg-muted: #0e2b28;
+  --ui-bg-elevated: #123330;
+  --ui-text: #eef3f1;
+  --ui-text-muted: #9db3ad;
+  --ui-text-dimmed: #7f9a94;
+  --ui-border: rgb(238 243 241 / 0.14);
+  --ui-border-muted: rgb(238 243 241 / 0.08);
+  --ui-border-accented: rgb(238 243 241 / 0.2);
 }
 
 body {
   font-family: var(--font-sans);
+  background: var(--ui-bg);
+  color: var(--ui-text);
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
 }
 
-h1, h2, h3 {
-  letter-spacing: -0.035em;
+/* ---------- Display type ----------
+   Wide cut + tight tracking: signage, not editorial. */
+
+.font-display {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 112;
+  letter-spacing: -0.03em;
 }
 
-/* Glass card — designkit .dk-card */
+.display-xl {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 115;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+
+.display-md {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 110;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+/* An eyebrow that reads like a form field label, because the page is
+   presenting inspection records. */
+.eyebrow {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 88;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+/* Prices, dates and counts line up like a receipt. */
+.numeric { font-variant-numeric: tabular-nums; }
+
+/* Nuxt UI paints text on the primary colour with `text-inverted` (white),
+   which assumes a dark primary. Saffron is light in both themes, so anything
+   sitting on it takes ink instead. */
+[role="tab"][data-state="active"] { color: #0a2422; }
+
+/* ---------- Surfaces (designkit .dk-card) ---------- */
+
 .dk-card {
   border: 1px solid var(--ui-border);
   border-radius: 20px;
-  background: color-mix(in srgb, var(--ui-bg) 94%, transparent);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 8px 30px rgb(0 0 0 / 0.05);
+  background: color-mix(in srgb, var(--ui-bg-elevated) 94%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 8px 30px rgb(10 36 34 / 0.05);
   backdrop-filter: blur(22px) saturate(150%);
   -webkit-backdrop-filter: blur(22px) saturate(150%);
 }
 
 .dark .dk-card {
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 8px 30px rgb(0 0 0 / 0.3);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 8px 30px rgb(0 0 0 / 0.4);
 }
 
-/* Interactive lift — designkit .dk-card--interactive */
 .dk-card-interactive {
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .dk-card-interactive:hover {
-  border-color: color-mix(in srgb, #0071e3 28%, var(--ui-border));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 18px 48px rgb(0 0 0 / 0.1);
+  border-color: color-mix(in srgb, #f2a93b 45%, var(--ui-border));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 18px 44px rgb(10 36 34 / 0.11);
   transform: translateY(-2px);
 }
 
-/* Translucent sticky nav — apple.com style */
+.dark .dk-card-interactive:hover {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 44px rgb(0 0 0 / 0.5);
+}
+
+/* Translucent sticky nav */
 .dk-nav {
-  background: color-mix(in srgb, var(--ui-bg) 72%, transparent);
+  background: color-mix(in srgb, var(--ui-bg) 78%, transparent);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
+
+/* ---------- Signature: the inspection seal ----------
+   A stamped mark, slightly rotated, sitting on vehicle photography.
+   One per surface — it is the unfair advantage made visible. */
+
+.seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 7px;
+  border: 1.5px solid color-mix(in srgb, #f2a93b 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, #f2a93b 14%, transparent);
+  color: #965312;
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 90;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: rotate(-3deg);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.dark .seal { color: #f2bd5e; }
+
+/* Over photography the stamp needs its own ground to stay legible. */
+.seal--photo {
+  border-color: #f2a93b;
+  background: color-mix(in srgb, #061715 76%, transparent);
+  color: #f2bd5e;
+}
+
+.seal--lg {
+  padding: 8px 15px 8px 11px;
+  font-size: 12px;
+  gap: 7px;
+}
+
+/* Hairline ticks that read as a form's rule, used to separate record rows. */
+.record-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px dashed var(--ui-border);
+}
+
+.record-row:last-child { border-bottom: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .dk-card-interactive { transition-duration: 0.01ms; }
