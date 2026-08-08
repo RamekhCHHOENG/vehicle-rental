@@ -41,11 +41,11 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:?set it in .env — see .env.example}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set it in .env — see .env.example}
       # The origin the visitor's browser loads the site from — the only one CORS
-      # lets through, so a wrong value fails every request from the real site.
-      # The session cookie is SameSite=Lax, so when the API answers on its own
-      # domain that domain has to sit under the same registrable domain as this
-      # one (api.example.com beside yan.example.com is fine; an unrelated domain
-      # drops the cookie and login stops working).
+      # lets through. Normally the site and the API share a domain, because the
+      # Nuxt server proxies /api and /uploads through to this service, and
+      # same-origin requests never reach CORS at all. It still has to be right
+      # for the day the API gets its own domain, and a wrong value fails every
+      # request from the site while the containers stay perfectly healthy.
       WEB_ORIGIN: ${WEB_ORIGIN:?set it in .env — see .env.example}
     volumes:
       - uploads:/app/uploads

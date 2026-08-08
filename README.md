@@ -225,26 +225,36 @@ on a cron job, plus a copy of the `uploads` volume.
 
 ## Deploying to a PaaS (Coolify, Dokploy, …)
 
-The platform runs its own reverse proxy, so it needs the base file and nothing
-else — no Caddy, or the two fight over ports 80 and 443. Point the app at
-`docker-compose.yml`.
+The platform runs its own reverse proxy, so it needs `docker-compose.yml` and
+nothing else — no Caddy, or the two fight over ports 80 and 443.
 
-Give `web` and `api` a domain each, and make them **subdomains of the same
-domain** (`yan.example.com`, `api.example.com`). The session cookie is
-`SameSite=Lax`, so an API on an unrelated domain would be same-origin for
-neither and login would fail with no visible error.
+**One domain serves everything.** Give the `web` service your domain and give
+`api` no domain at all: `server/api/[...].ts` and `server/routes/uploads/[...].ts`
+forward those two prefixes from the Nuxt server to `http://api:8080` over the
+compose network. The browser therefore never leaves your origin — no CORS
+exchange, no cross-site cookie, and the API is not directly reachable from the
+internet. Set the domain to `https://` so the platform issues a certificate.
 
 Then set, in the platform's environment variables:
 
-| Variable               | Value                                        |
-|------------------------|----------------------------------------------|
-| `POSTGRES_PASSWORD`    | `openssl rand -base64 32`                    |
-| `JWT_SECRET`           | `openssl rand -base64 32`                    |
-| `ADMIN_EMAIL`          | your admin address                           |
-| `ADMIN_PASSWORD`       | `openssl rand -base64 32`                    |
-| `WEB_ORIGIN`           | `https://` + the domain routed to `web`      |
-| `NUXT_PUBLIC_API_BASE` | `https://` + the domain routed to `api`      |
+| Variable               | Value                                   |
+|------------------------|-----------------------------------------|
+| `POSTGRES_PASSWORD`    | `openssl rand -base64 32`               |
+| `JWT_SECRET`           | `openssl rand -base64 32`               |
+| `ADMIN_EMAIL`          | your admin address                      |
+| `ADMIN_PASSWORD`       | `openssl rand -base64 24`               |
+| `WEB_ORIGIN`           | `https://yourdomain.com`                |
+| `NUXT_PUBLIC_API_BASE` | `https://yourdomain.com` — the same one |
 
-`WEB_ORIGIN` is the one that is easy to miss: it is the only origin the API's
-CORS policy admits, and a wrong value fails every request from the deployed
-site while the containers themselves look perfectly healthy.
+Two things that fail quietly if you get them wrong:
+
+- **Scheme.** CORS compares origins as strings, so `https://` in `WEB_ORIGIN`
+  against a domain the platform serves over `http://` rejects every request
+  while the containers look perfectly healthy. Same-origin requests skip CORS
+  entirely, so this only bites if you later split the API onto its own domain.
+- **Postgres passwords are set once.** `POSTGRES_PASSWORD` is read only when
+  the data directory is first initialised. Changing it later does not change
+  the database — the API just stops being able to connect. Rotating it on an
+  existing deployment means `ALTER USER` inside psql, or deleting the volume if
+  there is nothing worth keeping. `ADMIN_PASSWORD` behaves the same way: the
+  admin is seeded only when no admin row exists.
