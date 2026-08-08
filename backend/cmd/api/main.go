@@ -17,7 +17,10 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("configuration: %v", err)
+	}
 
 	db, err := database.Connect(cfg)
 	if err != nil {

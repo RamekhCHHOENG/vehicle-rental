@@ -37,8 +37,29 @@ Two addresses point at the API because SSR and the browser reach it differently:
 `NUXT_API_INTERNAL` (`http://api:8080`) is what the Nuxt server calls over the
 compose network. `useApi` picks between them.
 
-The admin account is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`
-on first startup.
+## Secrets
+
+This repository is public, so nothing secret can live in it. `.env.example`
+ships with the secret fields **blank on purpose**, and the API refuses to start
+if `JWT_SECRET` or `ADMIN_PASSWORD` is missing, too short, or set to one of the
+placeholder strings that appear in this repo. A default secret in a public repo
+is not a secret: anyone could use it to mint an admin session.
+
+Generate each one with:
+
+```bash
+openssl rand -base64 32
+```
+
+The admin account is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` **only on the
+first startup**, when no admin row exists yet. Changing `ADMIN_PASSWORD` later
+does not rotate an account that already exists — to force a reseed, delete the
+row and restart the API:
+
+```bash
+docker compose exec postgres psql -U carrental -d carrental -c "DELETE FROM users WHERE role='admin';"
+docker compose restart api
+```
 
 You can also run the pieces natively (Postgres still via Docker):
 
