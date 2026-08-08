@@ -26,6 +26,7 @@ func main() {
 
 	auth := &handlers.AuthHandler{DB: db, JWTSecret: cfg.JWTSecret}
 	vehicles := &handlers.VehicleHandler{DB: db}
+	admin := &handlers.AdminHandler{DB: db}
 
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
@@ -64,6 +65,17 @@ func main() {
 		r.Delete("/vehicles/{id}", vehicles.DeleteOwn)
 		r.Post("/vehicles/{id}/photos", vehicles.UploadPhoto)
 		r.Delete("/vehicles/{id}/photos/{photoId}", vehicles.DeletePhoto)
+	})
+
+	// Admin verification panel.
+	r.Route("/api/admin", func(r chi.Router) {
+		r.Use(middleware.RequireAuth(cfg.JWTSecret))
+		r.Use(middleware.RequireRole(models.RoleAdmin))
+		r.Get("/vehicles", admin.ListVehicles)
+		r.Post("/vehicles/{id}/approve", admin.Approve)
+		r.Post("/vehicles/{id}/reject", admin.Reject)
+		r.Get("/users", admin.ListUsers)
+		r.Get("/stats", admin.Stats)
 	})
 
 	// Uploaded photos served as static files.
